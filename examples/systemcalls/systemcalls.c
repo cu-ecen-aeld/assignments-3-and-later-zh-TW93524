@@ -1,4 +1,9 @@
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -10,6 +15,9 @@
 bool do_system(const char *cmd)
 {
 
+	if( system(cmd) == -1 )
+		return false;
+	
 /*
  * TODO  add your code here
  *  Call the system() function with the command set in the cmd
@@ -58,9 +66,25 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    int status;
+    printf( "test .... [%s]\n", command[0] );
+    pid_t pid = fork();
+    if( pid < 0 ) {
+	perror( "fork failed" );
+	return false;
+    } else if ( pid == 0 ) {
+	execv( command[0], command );
+	perror( "execv failed" );
+	exit(EXIT_FAILURE);
+    } else {
+	if( waitpid(pid,&status,0) == -1 ) {
+		perror( "wait failed" );
+		return false;
+	}
+	return WIFEXITED(status) && WEXITSTATUS(status)==0;
+    }	    
 
     va_end(args);
-
     return true;
 }
 
@@ -92,7 +116,28 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+    int status = 0;
+    pid_t pid = fork();
 
+    if( pid < 0 )
+        return false;
+
+    if( pid == 0 ) { // child
+        int fd = open( outputfile, O_WRONLY | O_CREAT | O_TRUNC, 0644 );
+        if ( fd < 0 )
+            _exit(1);
+
+        if( dup2(fd, 1) < 0 ) {
+            close(fd);
+            _exit(1);
+        }
+        close( fd );
+        execv( command[0], command );
+    } else { // parent
+
+        if( waitpid(pid,&status,0) == -1 )
+            return false;
+    }
     va_end(args);
 
     return true;
