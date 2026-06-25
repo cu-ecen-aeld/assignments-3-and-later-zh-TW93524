@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DAEMON="$(dirname "$0")/aesdsocket"
+DAEMON="/usr/bin/aesdsocket"
 NAME="aesdsocket"
 
 case "$1" in
