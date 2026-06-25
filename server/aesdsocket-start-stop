@@ -1,0 +1,23 @@
+#!/bin/sh
+
+DAEMON="$(dirname "$0")/aesdsocket"
+NAME="aesdsocket"
+
+case "$1" in
+    start)
+        start-stop-daemon --start --oknodo --name "$NAME" --exec "$DAEMON" -- -d
+        ;;
+    stop)
+        start-stop-daemon --stop --oknodo --signal TERM --name "$NAME"
+        ;;
+    restart)
+        "$0" stop
+        "$0" start
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+
+exit 0
